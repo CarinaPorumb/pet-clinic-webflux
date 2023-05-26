@@ -7,22 +7,21 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class PetDTO {
+public class OwnerDTO {
 
     private Integer id;
 
     @NotNull
     @NotBlank
     private String name;
-    private String petType;
-    private Integer age;
-    private Double weight;
-    private LocalDate birthdate;
+
+    private String address;
+
+    @NotBlank
+    private String telephone;
 
 }

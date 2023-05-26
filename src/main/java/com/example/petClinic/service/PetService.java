@@ -12,4 +12,10 @@ public interface PetService {
 
     Mono<PetDTO> saveNewPet(PetDTO dto);
 
+    Mono<PetDTO> updatePet(PetDTO dto, Integer id);
+
+    Mono<Void> deletePet(Integer id);
+
+    Mono<PetDTO> patchPet(PetDTO dto, Integer id);
+
 }

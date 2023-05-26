@@ -15,6 +15,7 @@ public class DatabaseConfig {
 
     @Value("classpath:/schema.sql")
     Resource resource;
+
     @Bean
     ConnectionFactoryInitializer initializer(ConnectionFactory connectionFactory) {
         ConnectionFactoryInitializer initializer = new ConnectionFactoryInitializer();
@@ -22,5 +23,4 @@ public class DatabaseConfig {
         initializer.setDatabasePopulator(new ResourceDatabasePopulator(resource));
         return initializer;
     }
-
 }
