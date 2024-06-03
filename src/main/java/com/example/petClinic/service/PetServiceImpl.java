@@ -1,7 +1,7 @@
 package com.example.petClinic.service;
 
+import com.example.petClinic.dto.PetDTO;
 import com.example.petClinic.mapper.PetMapper;
-import com.example.petClinic.model.PetDTO;
 import com.example.petClinic.repository.PetRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,44 +18,48 @@ public class PetServiceImpl implements PetService {
 
     @Override
     public Flux<PetDTO> listPets() {
-        return petRepository.findAll().map(petMapper::petToPetDto);
+        return petRepository.findAll().map(petMapper::toDTO);
     }
 
     @Override
-    public Mono<PetDTO> getById(Integer id) {
-        return petRepository.findById(id).map(petMapper::petToPetDto);
+    public Mono<PetDTO> getPetById(Integer id) {
+        return petRepository.findById(id)
+                .map(petMapper::toDTO)
+                .switchIfEmpty(Mono.error(new RuntimeException("Pet not found")));
     }
 
     @Override
     public Mono<PetDTO> saveNewPet(PetDTO dto) {
-        return petRepository.save(petMapper.petDtoToPet(dto))
-                .map(petMapper::petToPetDto);
+        return petRepository.save(petMapper.toEntity(dto))
+                .map(petMapper::toDTO);
     }
 
     @Override
     public Mono<PetDTO> updatePet(PetDTO dto, Integer id) {
         return petRepository.findById(id)
-                .map(foundPet -> {
+                .flatMap(foundPet -> {
                     foundPet.setName(dto.getName());
                     foundPet.setPetType(dto.getPetType());
                     foundPet.setAge(dto.getAge());
                     foundPet.setWeight(dto.getWeight());
                     foundPet.setBirthdate(dto.getBirthdate());
-                    return foundPet;
+                    return petRepository.save(foundPet);
                 })
-                .flatMap(petRepository::save)
-                .map(petMapper::petToPetDto);
+                .map(petMapper::toDTO)
+                .switchIfEmpty(Mono.error(new RuntimeException("Pet not found")));
     }
 
     @Override
     public Mono<Void> deletePet(Integer id) {
-        return petRepository.deleteById(id);
+        return petRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Pet not found")))
+                .flatMap(petRepository::delete);
     }
 
     @Override
     public Mono<PetDTO> patchPet(PetDTO dto, Integer id) {
         return petRepository.findById(id)
-                .map(foundPet -> {
+                .flatMap(foundPet -> {
                     if (StringUtils.hasText(dto.getName())) {
                         foundPet.setName(dto.getName());
                     }
@@ -71,11 +75,9 @@ public class PetServiceImpl implements PetService {
                     if (dto.getBirthdate() != null) {
                         foundPet.setBirthdate(dto.getBirthdate());
                     }
-                    return foundPet;
+                    return petRepository.save(foundPet);
                 })
-                .flatMap(petRepository::save)
-                .map(petMapper::petToPetDto);
+                .map(petMapper::toDTO)
+                .switchIfEmpty(Mono.error(new RuntimeException("Pet not found")));
     }
-
-
 }

@@ -1,7 +1,6 @@
-package com.example.petClinic.model;
+package com.example.petClinic.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,16 +12,13 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class PetDTO {
+public class VisitDTO {
 
     private Integer id;
 
-    @NotNull
     @NotBlank
-    private String name;
-    private String petType;
-    private Integer age;
-    private Double weight;
-    private LocalDate birthdate;
+    private String diagnosis;
+    private Integer price;
+    private LocalDate date;
 
 }

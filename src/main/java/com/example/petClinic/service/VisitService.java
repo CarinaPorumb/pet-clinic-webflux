@@ -1,6 +1,6 @@
 package com.example.petClinic.service;
 
-import com.example.petClinic.model.VisitDTO;
+import com.example.petClinic.dto.VisitDTO;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

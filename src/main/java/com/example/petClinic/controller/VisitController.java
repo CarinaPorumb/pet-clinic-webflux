@@ -1,6 +1,6 @@
 package com.example.petClinic.controller;
 
-import com.example.petClinic.model.VisitDTO;
+import com.example.petClinic.dto.VisitDTO;
 import com.example.petClinic.service.VisitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,53 +14,52 @@ import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/v2/visit")
 public class VisitController {
-
-    public static final String VISIT_PATH = "/api/v2/visit";
-    public static final String VISIT_PATH_ID = VISIT_PATH + "/{id}";
 
     private final VisitService visitService;
 
-    @GetMapping(value = VISIT_PATH)
-    Flux<VisitDTO> listVisits() {
+    @GetMapping
+    public Flux<VisitDTO> listVisits() {
         return visitService.listVisits();
     }
 
-    @GetMapping(value = VISIT_PATH_ID)
-    Mono<VisitDTO> getVisitById(@PathVariable Integer id) {
+    @GetMapping("/{id}")
+    public Mono<VisitDTO> getVisitById(@PathVariable("id") Integer id) {
         return visitService.getVisitById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Visit not found")));
     }
 
-    @PostMapping(value = VISIT_PATH)
-    Mono<ResponseEntity<VisitDTO>> createNewVisit(@Validated @RequestBody VisitDTO dto) {
+    @PostMapping
+    public Mono<ResponseEntity<Void>> createNewVisit(@Validated @RequestBody VisitDTO dto) {
         return visitService.saveNewVisit(dto)
-                .map(savedDto -> ResponseEntity.created(UriComponentsBuilder
-                                .fromHttpUrl("http://localhost:8082/" + VISIT_PATH + "/" + savedDto.getId())
-                                .build().toUri())
+                .map(savedDto -> ResponseEntity.created(
+                                UriComponentsBuilder.fromPath("/api/v2/visit/{id}")
+                                        .buildAndExpand(savedDto.getId())
+                                        .toUri())
                         .build());
     }
 
-    @PutMapping(value = VISIT_PATH_ID)
-    Mono<ResponseEntity<VisitDTO>> updateVisit(@Validated @RequestBody VisitDTO dto, @PathVariable Integer id) {
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<VisitDTO>> updateVisit(@Validated @RequestBody VisitDTO dto, @PathVariable("id") Integer id) {
         return visitService.updateVisit(dto, id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(savedVisit -> ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Visit not found")))
+                .map(ResponseEntity::ok);
     }
 
-    @DeleteMapping(value = VISIT_PATH_ID)
-    Mono<ResponseEntity<Void>> deleteVisit(@PathVariable Integer id) {
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<Void>> deleteVisit(@PathVariable("id") Integer id) {
         return visitService.getVisitById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(visitDto -> visitService.deleteVisit(visitDto.getId()))
-                .thenReturn(ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Visit not found")))
+                .flatMap(visitDto -> visitService.deleteVisit(visitDto.getId()))
+                .then(Mono.just(ResponseEntity.noContent().build()));
     }
 
-    @PatchMapping(value = VISIT_PATH_ID)
-    Mono<ResponseEntity<VisitDTO>> patchVisit(@Validated @RequestBody VisitDTO dto, @PathVariable Integer id) {
+    @PatchMapping("/{id}")
+    public Mono<ResponseEntity<VisitDTO>> patchVisit(@Validated @RequestBody VisitDTO dto, @PathVariable("id") Integer id) {
         return visitService.patchVisit(dto, id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(savedVisit -> ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Visit not found")))
+                .map(ResponseEntity::ok);
     }
 
 }

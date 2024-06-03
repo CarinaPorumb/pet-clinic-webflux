@@ -1,14 +1,14 @@
 package com.example.petClinic.mapper;
 
 import com.example.petClinic.domain.Vet;
-import com.example.petClinic.model.VetDTO;
+import com.example.petClinic.dto.VetDTO;
 import org.mapstruct.Mapper;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface VetMapper {
 
-    Vet vetDtoToVet(VetDTO dto);
+    Vet toEntity(VetDTO dto);
 
-    VetDTO vetToVetDto(Vet vet);
+    VetDTO toDTO(Vet vet);
 
 }

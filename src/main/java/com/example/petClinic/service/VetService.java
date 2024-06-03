@@ -1,12 +1,12 @@
 package com.example.petClinic.service;
 
-import com.example.petClinic.model.VetDTO;
+import com.example.petClinic.dto.VetDTO;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface VetService {
 
-    Flux<VetDTO> listVest();
+    Flux<VetDTO> listVets();
 
     Mono<VetDTO> getVetById(Integer id);
 

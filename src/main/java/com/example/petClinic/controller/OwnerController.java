@@ -1,6 +1,6 @@
 package com.example.petClinic.controller;
 
-import com.example.petClinic.model.OwnerDTO;
+import com.example.petClinic.dto.OwnerDTO;
 import com.example.petClinic.service.OwnerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,53 +14,51 @@ import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/v2/owner")
 public class OwnerController {
-
-    public static final String OWNER_PATH = "/api/v2/owner";
-    public static final String OWNER_PATH_ID = OWNER_PATH + "/{id}";
 
     private final OwnerService ownerService;
 
-    @GetMapping(value = OWNER_PATH)
-    Flux<OwnerDTO> listOwners() {
+    @GetMapping
+    public Flux<OwnerDTO> listOwners() {
         return ownerService.listOwners();
     }
 
-    @GetMapping(value = OWNER_PATH_ID)
-    Mono<OwnerDTO> getOwnerById(@PathVariable("id") Integer id) {
+    @GetMapping("/{id}")
+    public Mono<OwnerDTO> getOwnerById(@PathVariable("id") Integer id) {
         return ownerService.getOwnerById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Owner not found")));
     }
 
-    @PostMapping(value = OWNER_PATH)
-    Mono<ResponseEntity<Void>> createNewOwner(@Validated @RequestBody OwnerDTO dto) {
+    @PostMapping
+    public Mono<ResponseEntity<Void>> createNewOwner(@Validated @RequestBody OwnerDTO dto) {
         return ownerService.saveNewOwner(dto)
-                .map(savedDto -> ResponseEntity.created(UriComponentsBuilder
-                                .fromHttpUrl("http://localhost:8082/" + OWNER_PATH + "/" + savedDto.getId())
-                                .build().toUri())
+                .map(savedDto -> ResponseEntity.created(
+                                UriComponentsBuilder.fromPath("/api/v2/owner/{id}")
+                                        .buildAndExpand(savedDto.getId())
+                                        .toUri())
                         .build());
     }
 
-    @PutMapping(value = OWNER_PATH_ID)
-    Mono<ResponseEntity<OwnerDTO>> updateOwner(@Validated @RequestBody OwnerDTO dto, @PathVariable Integer id) {
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<OwnerDTO>> updateOwner(@Validated @RequestBody OwnerDTO dto, @PathVariable("id") Integer id) {
         return ownerService.updateOwner(dto, id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(savedOwner -> ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Owner not found")))
+                .map(ResponseEntity::ok);
     }
 
-    @DeleteMapping(value = OWNER_PATH_ID)
-    Mono<ResponseEntity<Void>> deleteOwner(@PathVariable Integer id) {
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<Void>> deleteOwner(@PathVariable("id") Integer id) {
         return ownerService.getOwnerById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(ownderDto -> ownerService.deleteOwner(ownderDto.getId()))
-                .thenReturn(ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Owner not found")))
+                .flatMap(ownerDto -> ownerService.deleteOwner(ownerDto.getId()))
+                .then(Mono.just(ResponseEntity.noContent().build()));
     }
 
-    @PatchMapping(value = OWNER_PATH_ID)
-    Mono<ResponseEntity<OwnerDTO>> patchOwner(@Validated @RequestBody OwnerDTO dto, @PathVariable Integer id) {
+    @PatchMapping("/{id}")
+    public Mono<ResponseEntity<OwnerDTO>> patchOwner(@Validated @RequestBody OwnerDTO dto, @PathVariable("id") Integer id) {
         return ownerService.patchOwner(dto, id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(savedOwner -> ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Owner not found")))
+                .map(ResponseEntity::ok);
     }
-
 }

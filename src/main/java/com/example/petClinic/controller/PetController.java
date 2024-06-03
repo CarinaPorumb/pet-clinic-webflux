@@ -1,6 +1,6 @@
 package com.example.petClinic.controller;
 
-import com.example.petClinic.model.PetDTO;
+import com.example.petClinic.dto.PetDTO;
 import com.example.petClinic.service.PetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,53 +14,52 @@ import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/v2/pet")
 public class PetController {
-
-    public static final String PET_PATH = "/api/v2/pet";
-    public static final String PET_PATH_ID = PET_PATH + "/{id}";
 
     private final PetService petService;
 
-    @GetMapping(value = PET_PATH)
-    Flux<PetDTO> listPets() {
+    @GetMapping
+    public Flux<PetDTO> listPets() {
         return petService.listPets();
     }
 
-    @GetMapping(value = PET_PATH_ID)
-    Mono<PetDTO> getPetById(@PathVariable("id") Integer id) {
-        return petService.getById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
+    @GetMapping("/{id}")
+    public Mono<PetDTO> getPetById(@PathVariable("id") Integer id) {
+        return petService.getPetById(id)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Pet not found")));
     }
 
-    @PostMapping(value = PET_PATH)
-    Mono<ResponseEntity<Void>> createNewPet(@Validated @RequestBody PetDTO dto) {
+    @PostMapping
+    public Mono<ResponseEntity<Void>> createNewPet(@Validated @RequestBody PetDTO dto) {
         return petService.saveNewPet(dto)
-                .map(savedDTO -> ResponseEntity.created(UriComponentsBuilder
-                                .fromHttpUrl("http://localhost:8082/" + PET_PATH + "/" + savedDTO.getId())
-                                .build().toUri())
+                .map(savedDTO -> ResponseEntity.created(
+                                UriComponentsBuilder.fromPath("/api/v2/pet/{id}")
+                                        .buildAndExpand(savedDTO.getId())
+                                        .toUri())
                         .build());
     }
 
-    @PutMapping(value = PET_PATH_ID)
-    Mono<ResponseEntity<PetDTO>> updatePet(@Validated @RequestBody PetDTO dto, @PathVariable Integer id) {
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<PetDTO>> updatePet(@Validated @RequestBody PetDTO dto, @PathVariable("id") Integer id) {
         return petService.updatePet(dto, id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(savedPet -> ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Pet not found")))
+                .map(ResponseEntity::ok);
     }
 
-    @DeleteMapping(value = PET_PATH_ID)
-    Mono<ResponseEntity<Void>> deletePet(@PathVariable Integer id) {
-        return petService.getById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(petDto -> petService.deletePet(petDto.getId()))
-                .thenReturn(ResponseEntity.noContent().build());
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<Void>> deletePet(@PathVariable("id") Integer id) {
+        return petService.getPetById(id)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Pet not found")))
+                .flatMap(petDto -> petService.deletePet(petDto.getId()))
+                .then(Mono.just(ResponseEntity.noContent().build()));
     }
 
-    @PatchMapping(value = PET_PATH_ID)
-    Mono<ResponseEntity<PetDTO>> patchPet(@Validated @RequestBody PetDTO dto, @PathVariable Integer id) {
+    @PatchMapping("/{id}")
+    public Mono<ResponseEntity<PetDTO>> patchPet(@Validated @RequestBody PetDTO dto, @PathVariable("id") Integer id) {
         return petService.patchPet(dto, id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(savedPet -> ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Pet not found")))
+                .map(ResponseEntity::ok);
     }
 
 }

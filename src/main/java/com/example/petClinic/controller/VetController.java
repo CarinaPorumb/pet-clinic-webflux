@@ -1,6 +1,6 @@
 package com.example.petClinic.controller;
 
-import com.example.petClinic.model.VetDTO;
+import com.example.petClinic.dto.VetDTO;
 import com.example.petClinic.service.VetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,53 +14,52 @@ import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/v2/vet")
 public class VetController {
-
-    public static final String VET_PATH = "/api/v2/vet";
-    public static final String VET_PATH_ID = VET_PATH + "/{id}";
 
     private final VetService vetService;
 
-    @GetMapping(value = VET_PATH)
-    Flux<VetDTO> listVets() {
-        return vetService.listVest();
+    @GetMapping
+    public Flux<VetDTO> listVets() {
+        return vetService.listVets();
     }
 
-    @GetMapping(value = VET_PATH_ID)
-    Mono<VetDTO> getVetById(@PathVariable Integer id) {
+    @GetMapping("/{id}")
+    public Mono<VetDTO> getVetById(@PathVariable("id") Integer id) {
         return vetService.getVetById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)));
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Vet not found")));
     }
 
-    @PostMapping(value = VET_PATH)
-    Mono<ResponseEntity<Void>> createNewVet(@Validated @RequestBody VetDTO dto) {
+    @PostMapping
+    public Mono<ResponseEntity<Void>> createNewVet(@Validated @RequestBody VetDTO dto) {
         return vetService.saveNewVet(dto)
-                .map(savedDto -> ResponseEntity.created(UriComponentsBuilder
-                                .fromHttpUrl("http://localhost:8082/" + VET_PATH + "/" + savedDto.getId())
-                                .build().toUri())
+                .map(savedDto -> ResponseEntity.created(
+                                UriComponentsBuilder.fromPath("/api/v2/vet/{id}")
+                                        .buildAndExpand(savedDto.getId())
+                                        .toUri())
                         .build());
     }
 
-    @PutMapping(value = VET_PATH_ID)
-    Mono<ResponseEntity<VetDTO>> updateVet(@Validated @RequestBody VetDTO dto, @PathVariable Integer id) {
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<VetDTO>> updateVet(@Validated @RequestBody VetDTO dto, @PathVariable("id") Integer id) {
         return vetService.updateVet(dto, id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(savedVet -> ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Vet not found")))
+                .map(ResponseEntity::ok);
     }
 
-    @DeleteMapping(value = VET_PATH_ID)
-    Mono<ResponseEntity<Void>> deleteVet(@PathVariable Integer id) {
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<Void>> deleteVet(@PathVariable("id") Integer id) {
         return vetService.getVetById(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(vetDto -> vetService.deleteVet(vetDto.getId()))
-                .thenReturn(ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Vet not found")))
+                .flatMap(vetDto -> vetService.deleteVet(vetDto.getId()))
+                .then(Mono.just(ResponseEntity.noContent().build()));
     }
 
-    @PatchMapping(value = VET_PATH_ID)
-    Mono<ResponseEntity<VetDTO>> patchVet(@Validated @RequestBody VetDTO dto, @PathVariable Integer id) {
+    @PatchMapping("/{id}")
+    public Mono<ResponseEntity<VetDTO>> patchVet(@Validated @RequestBody VetDTO dto, @PathVariable("id") Integer id) {
         return vetService.patchVet(dto, id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map(savedVet -> ResponseEntity.noContent().build());
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Vet not found")))
+                .map(ResponseEntity::ok);
     }
 
 }

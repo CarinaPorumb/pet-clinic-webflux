@@ -1,7 +1,7 @@
 package com.example.petClinic.service;
 
+import com.example.petClinic.dto.OwnerDTO;
 import com.example.petClinic.mapper.OwnerMapper;
-import com.example.petClinic.model.OwnerDTO;
 import com.example.petClinic.repository.OwnerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,42 +18,47 @@ public class OwnerServiceImpl implements OwnerService {
 
     @Override
     public Flux<OwnerDTO> listOwners() {
-        return ownerRepository.findAll().map(ownerMapper::ownerToOwnerDto);
+        return ownerRepository.findAll().map(ownerMapper::toDTO);
     }
 
     @Override
     public Mono<OwnerDTO> getOwnerById(Integer id) {
-        return ownerRepository.findById(id).map(ownerMapper::ownerToOwnerDto);
+        return ownerRepository.findById(id)
+                .map(ownerMapper::toDTO)
+                .switchIfEmpty(Mono.error(new RuntimeException("Owner not found")));
     }
 
     @Override
     public Mono<OwnerDTO> saveNewOwner(OwnerDTO dto) {
-        return ownerRepository.save(ownerMapper.ownerDtoToOwner(dto))
-                .map(ownerMapper::ownerToOwnerDto);
+        return ownerRepository.save(ownerMapper.toEntity(dto))
+                .map(ownerMapper::toDTO);
     }
 
     @Override
     public Mono<OwnerDTO> updateOwner(OwnerDTO dto, Integer id) {
         return ownerRepository.findById(id)
-                .map(foundOwner -> {
+                .flatMap(foundOwner -> {
                     foundOwner.setName(dto.getName());
                     foundOwner.setAddress(dto.getAddress());
                     foundOwner.setTelephone(dto.getTelephone());
-                    return foundOwner;
+                    return ownerRepository.save(foundOwner);
                 })
-                .flatMap(ownerRepository::save)
-                .map(ownerMapper::ownerToOwnerDto);
+                .map(ownerMapper::toDTO)
+                .switchIfEmpty(Mono.error(new RuntimeException("Owner not found")));
     }
 
     @Override
     public Mono<Void> deleteOwner(Integer id) {
-        return ownerRepository.deleteById(id);
+        return ownerRepository.findById(id)
+                .switchIfEmpty(Mono.error(new RuntimeException("Owner not found")))
+                .flatMap(ownerRepository::delete);
+
     }
 
     @Override
     public Mono<OwnerDTO> patchOwner(OwnerDTO dto, Integer id) {
         return ownerRepository.findById(id)
-                .map(foundOwner -> {
+                .flatMap(foundOwner -> {
                     if (StringUtils.hasText(dto.getName())) {
                         foundOwner.setName(dto.getName());
                     }
@@ -63,10 +68,10 @@ public class OwnerServiceImpl implements OwnerService {
                     if (StringUtils.hasText(dto.getTelephone())) {
                         foundOwner.setTelephone(dto.getTelephone());
                     }
-                    return foundOwner;
+                    return ownerRepository.save(foundOwner);
                 })
-                .flatMap(ownerRepository::save)
-                .map(ownerMapper::ownerToOwnerDto);
+                .map(ownerMapper::toDTO)
+                .switchIfEmpty(Mono.error(new RuntimeException("Owner not found")));
     }
 
 }

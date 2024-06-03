@@ -1,14 +1,14 @@
 package com.example.petClinic.mapper;
 
 import com.example.petClinic.domain.Visit;
-import com.example.petClinic.model.VisitDTO;
+import com.example.petClinic.dto.VisitDTO;
 import org.mapstruct.Mapper;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface VisitMapper {
 
-    Visit visitDtoToVisit(VisitDTO dto);
+    Visit toEntity(VisitDTO dto);
 
-    VisitDTO visitToVisitDto(Visit visit);
+    VisitDTO toDTO(Visit visit);
 
 }
