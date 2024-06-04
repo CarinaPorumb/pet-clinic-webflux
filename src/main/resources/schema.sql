@@ -1,4 +1,4 @@
-create TABLE if NOT EXISTS owners
+create TABLE if NOT EXISTS owner
 (
     id        INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
     name      VARCHAR(255),
@@ -6,7 +6,7 @@ create TABLE if NOT EXISTS owners
     telephone VARCHAR(50)
 );
 
-create TABLE IF NOT EXISTS pets
+create TABLE IF NOT EXISTS pet
 (
     id        INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
     name      VARCHAR(255),
@@ -15,17 +15,17 @@ create TABLE IF NOT EXISTS pets
     weight    INTEGER,
     birthdate TIMESTAMP,
     owner_id  INTEGER,
-    FOREIGN KEY (owner_id) REFERENCES owners (id)
+    FOREIGN KEY (owner_id) REFERENCES owner (id)
 );
 
-create TABLE if NOT EXISTS vets
+create TABLE if NOT EXISTS vet
 (
     id         INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
     name       VARCHAR(255),
     speciality VARCHAR(255)
 );
 
-create TABLE if NOT EXISTS visits
+create TABLE if NOT EXISTS visit
 (
     id        INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
     diagnosis VARCHAR(255),
@@ -33,6 +33,6 @@ create TABLE if NOT EXISTS visits
     date      TIMESTAMP,
     pet_id    INTEGER,
     vet_id    INTEGER,
-    FOREIGN KEY (pet_id) REFERENCES pets (id),
-    FOREIGN KEY (vet_id) REFERENCES vets (id)
+    FOREIGN KEY (pet_id) REFERENCES pet (id),
+    FOREIGN KEY (vet_id) REFERENCES vet (id)
 );
